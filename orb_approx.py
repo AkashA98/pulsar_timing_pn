@@ -339,9 +339,9 @@ def orbits(t):
     orbits_lead_1PN_tail = np.zeros((len(N), len(N[0])))
     orbits_lead_taylor_res = np.zeros((len(N), len(N[0])))
     orbits_lead_taylor_res1 = np.zeros((len(N), len(N[0])))
-    orbits_lead_taylor_ratio1 = np.zeros((len(N), len(N[0])))
-    orbits_lead_taylor_ratio2 = np.zeros((len(N), len(N[0])))
-
+    orbits_lead_taylor_lead = np.zeros((len(N), len(N[0])))
+    orbits_lead_taylor_first = np.zeros((len(N), len(N[0])))
+    orbits_lead_taylor_second = np.zeros((len(N), len(N[0])))
 
     for i in range(len(N)):
         for j in range(len(ECC[0])):
@@ -383,16 +383,17 @@ def orbits(t):
             orbits_lead_1PN[i][j] = orb_lead_1PN
             orbits_lead_1PN_tail[i][j] = orb_lead_1PN_tail
             orbits_lead_taylor_res[i][j] = orb_res
-            orbits_lead_taylor_res1[i][j] = (taylor_phase_ext- taylor_phase)/(2*np.pi)
-            orbits_lead_taylor_ratio1[i][j] = (N[i][j]*t[-1])/(0.5*n_dot_lead*((t[-1])**2))
-            orbits_lead_taylor_ratio2[i][j] = (0.5*n_dot_lead*((t[-1])**2))/((1.0/6)*nddot*((t[-1])**3))
+            orbits_lead_taylor_res1[i][j] = orb_lead- ((taylor_phase_ext)/(2*np.pi))
+            orbits_lead_taylor_lead[i][j] = (N[i][j]*t[-1])
+            orbits_lead_taylor_first[i][j] = (0.5*n_dot_lead*((t[-1])**2))
+            orbits_lead_taylor_second[i][j] = ((1.0/6)*nddot*((t[-1])**3))
             #print(2*np.pi*u.second.to(u.hour)/N[i][j], ECC[i][j], orb_lead_1PN-orb_lead)
             print('Simulating the phase accumulated for the binary with period {p} and eccentricity {e}'.format(p=(2*u.second.to(u.hour)*np.pi/(N[i][j])), e = ECC[i][j]))
 
-    return orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1, orbits_lead_taylor_ratio1, orbits_lead_taylor_ratio2
+    return orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1, orbits_lead_taylor_lead, orbits_lead_taylor_first, orbits_lead_taylor_second
 
 
-def contour_plot(M,orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1, orbits_lead_taylor_ratio1, orbits_lead_taylor_ratio2):
+def contour_plot(M,orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1,  orbits_lead_taylor_lead, orbits_lead_taylor_first, orbits_lead_taylor_second):
 
     pb = np.linspace(0.5, 24, 50)
     ecc = np.linspace(0.05,0.95,50)
@@ -433,8 +434,8 @@ def contour_plot(M,orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_le
     plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_residual_{m:4.2f}.pdf".format(m=M))
     plt.clf()
     levels= [1e0, 1e1, 1e2]
-    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, 2*np.pi*orbits_lead_taylor_res, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
-    plt.imshow(2*np.pi*orbits_lead_taylor_res,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
+    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, 2*np.pi*abs(orbits_lead_taylor_res), levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
+    plt.imshow(2*np.pi*abs(orbits_lead_taylor_res),extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
     plt.xlabel('Period of the binary in hours')
     plt.ylabel('Eccentricity of the orbit')
     plt.title('Residuals due to Taylor approximation')
@@ -444,9 +445,9 @@ def contour_plot(M,orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_le
 
     plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_residual_ddot_{m:4.2f}.pdf".format(m=M))
     plt.clf()
-    levels= [1e-2, 1e-1, 1e0, 1e1]
-    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, 2*np.pi*orbits_lead_taylor_res1, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
-    plt.imshow(2*np.pi*orbits_lead_taylor_res1,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
+    levels= [1e0, 1e1, 1e2]
+    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, 2*np.pi*abs(orbits_lead_taylor_res1), levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
+    plt.imshow(2*np.pi*abs(orbits_lead_taylor_res1),extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
     plt.xlabel('Period of the binary in hours')
     plt.ylabel('Eccentricity of the orbit')
     plt.title('Residuals due to Taylor approximation')
@@ -454,26 +455,38 @@ def contour_plot(M,orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_le
     plotfile.savefig()
     plotfile.close()
 
-    plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_residual_ratio_{m:4.2f}.pdf".format(m=M))
+    plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_orbits_lead_{m:4.2f}.pdf".format(m=M))
     plt.clf()
-    levels= [1e0, 1e1, 1e2, 1e3]
-    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, orbits_lead_taylor_ratio1, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
-    plt.imshow(orbits_lead_taylor_ratio1,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
+    levels= [1e5, 4e5, 8e5, 1e6]
+    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, orbits_lead_taylor_lead, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
+    plt.imshow(orbits_lead_taylor_lead,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
     plt.xlabel('Period of the binary in hours')
     plt.ylabel('Eccentricity of the orbit')
-    plt.title('Residuals due to Taylor approximation')
+    plt.title('Contribution from initial frequency n')
     plt.colorbar()
     plotfile.savefig()
     plotfile.close()
 
-    plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_residual_ratio2_{m:4.2f}.pdf".format(m=M))
+    plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_orbits_first_{m:4.2f}.pdf".format(m=M))
     plt.clf()
-    levels= [1e0, 1e1, 1e2, 1e3]
-    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, orbits_lead_taylor_ratio2, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
-    plt.imshow(orbits_lead_taylor_ratio2,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
+    levels= [1e-4, 1e-2, 1e0, 1e2]
+    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, orbits_lead_taylor_first, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
+    plt.imshow(orbits_lead_taylor_first,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
     plt.xlabel('Period of the binary in hours')
     plt.ylabel('Eccentricity of the orbit')
-    plt.title('Residuals due to Taylor approximation')
+    plt.title(r'Contribution from derivative $\dot{n}$')
+    plt.colorbar()
+    plotfile.savefig()
+    plotfile.close()
+
+    plotfile = PdfPages("./Plots/Mass_{m:4.2f}/taylor_orbits_second_{m:4.2f}.pdf".format(m=M))
+    plt.clf()
+    levels= [1e-8, 1e-6, 1e-4, 1e-2, 1e0]
+    plt.contour(2*np.pi*u.second.to(u.hour)/N, ECC, orbits_lead_taylor_second, levels, norm=LogNorm(), origin='lower', colors='red', linewidths=0.5)
+    plt.imshow(orbits_lead_taylor_second,extent=[0.5, 24.0, 0.05, 0.95], norm=LogNorm(), aspect='auto', interpolation='gaussian', origin='lower')
+    plt.xlabel('Period of the binary in hours')
+    plt.ylabel('Eccentricity of the orbit')
+    plt.title(r'Contribution from second derivative $\ddot{n}$')
     plt.colorbar()
     plotfile.savefig()
     plotfile.close()
@@ -494,6 +507,6 @@ if __name__ == "__main__":
 
     t = np.linspace(0, (args.t)*u.year.to(u.second), u.year.to(u.day)*args.t)
 
-    orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1, orbits_lead_taylor_ratio1, orbits_lead_taylor_ratio2 = orbits(t)
+    orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1,  orbits_lead_taylor_lead, orbits_lead_taylor_first, orbits_lead_taylor_second = orbits(t)
 
-    contour_plot((args.m1+args.m2),orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1, orbits_lead_taylor_ratio1, orbits_lead_taylor_ratio2)
+    contour_plot((args.m1+args.m2),orbits_lead, orbits_lead_1PN, orbits_lead_1PN_tail, orbits_lead_taylor_res, orbits_lead_taylor_res1,  orbits_lead_taylor_lead, orbits_lead_taylor_first, orbits_lead_taylor_second)
